@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Configuration;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
@@ -6,16 +8,42 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using WebFormsIdentity.Models;
+using System.Diagnostics;
 
 namespace WebFormsIdentity
 {
     public class EmailService : IIdentityMessageService
     {
-        public Task SendAsync(IdentityMessage message)
+        public async Task SendAsync(IdentityMessage message)
         {
             // Plug in your email service here to send an email.
-            return Task.FromResult(0);
+            await configSendGridAsync(message);
+        }
+
+        private async Task configSendGridAsync(IdentityMessage message)
+        {
+            var msg = new SendGridMessage()
+            {
+                From = new EmailAddress("abdullah@izazsolutions.com", "WebFormsIdentityApp"),
+                Subject = message.Subject,
+                PlainTextContent = message.Body,
+                HtmlContent = message.Body
+            };
+            msg.AddTo(new EmailAddress(message.Destination, "testCustomer"));
+
+/*            var credentials = new NetworkCredential(
+                 ConfigurationManager.AppSettings["emailServiceUserName"],
+                 ConfigurationManager.AppSettings["emailServicePassword"]
+                 );*/
+
+
+            var client = new SendGridClient(ConfigurationManager.AppSettings["SendGridKey"]);
+            msg.SetClickTracking(false, false);
+            var response = await client.SendEmailAsync(msg);
+
         }
     }
 
