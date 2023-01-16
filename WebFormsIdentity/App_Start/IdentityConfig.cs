@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Configuration;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
@@ -6,16 +8,77 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using WebFormsIdentity.Models;
+using System.Diagnostics;
+using System.Net.Mail;
+using System.IO;
+using System.Web.Hosting;
 
 namespace WebFormsIdentity
 {
     public class EmailService : IIdentityMessageService
     {
-        public Task SendAsync(IdentityMessage message)
+        public async Task SendAsync(IdentityMessage message)
         {
             // Plug in your email service here to send an email.
-            return Task.FromResult(0);
+            await configSmtpAsync(message);
+        }
+
+        private async Task configSmtpAsync(IdentityMessage message)
+        {
+
+            /*            var msg = new SendGridMessage()
+                        {
+                            From = new EmailAddress("abdullah@izazsolutions.com", "WebFormsIdentityApp"),
+                            Subject = message.Subject,
+                            PlainTextContent = message.Body,
+                            HtmlContent = message.Body
+                        };
+                        msg.AddTo(new EmailAddress(message.Destination, "testCustomer"));
+
+            *//*            var credentials = new NetworkCredential(
+                             ConfigurationManager.AppSettings["emailServiceUserName"],
+                             ConfigurationManager.AppSettings["emailServicePassword"]
+                             );*//*
+
+
+                        var client = new SendGridClient(ConfigurationManager.AppSettings["SendGridKey"]);
+                        msg.SetClickTracking(false, false);
+                        var response = await client.SendEmailAsync(msg);*/
+
+            var msg = new MailMessage()
+            {
+                From = new MailAddress(getSettingsFromFile("emailAddress")),
+                Subject = message.Subject,
+                Body = message.Body,
+                IsBodyHtml = true
+
+            };
+            msg.To.Add(new MailAddress(message.Destination));
+
+            var smtpClient = new SmtpClient("smtp.gmail.com", 587);
+            smtpClient.Credentials = new NetworkCredential(getSettingsFromFile("emailAddress"), getSettingsFromFile("emailPassword"));
+            smtpClient.EnableSsl = true;
+            smtpClient.Send(msg);
+        }
+
+        private string getSettingsFromFile(string key)
+        {
+            string retrievedSetting = "";
+            var objReader = new StreamReader(String.Concat(HostingEnvironment.ApplicationPhysicalPath, "\\PrivateSettings.txt"));
+            do
+            {
+                var line = objReader.ReadLine();
+                if (line.StartsWith(key))
+                {
+                    retrievedSetting = line.Substring(key.Length+1);
+                    break;
+                }
+
+            } while (objReader.Peek() != -1);
+            return retrievedSetting;
         }
     }
 
