@@ -67,7 +67,7 @@ namespace WebFormsIdentity
         private string getSettingsFromFile(string key)
         {
             string retrievedSetting = "";
-            var objReader = new StreamReader(String.Concat(HostingEnvironment.ApplicationPhysicalPath, "\\PrivateSettings.txt"));
+            var objReader = new StreamReader(String.Concat(HostingEnvironment.ApplicationPhysicalPath, "\\PrivateSettings2.txt"));
             do
             {
                 var line = objReader.ReadLine();
