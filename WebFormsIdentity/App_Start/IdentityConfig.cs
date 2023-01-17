@@ -11,7 +11,7 @@ using Microsoft.Owin.Security;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using WebFormsIdentity.Models;
-using System.Diagnostics;
+//using System.Diagnostics;
 using System.Net.Mail;
 using System.IO;
 using System.Web.Hosting;
@@ -104,7 +104,7 @@ namespace WebFormsIdentity
             );
 
             // Status is one of Queued, Sending, Sent, Failed or null if the number is not valid
-            Trace.TraceInformation(smsMessage.Status.ToString());
+            //Trace.TraceInformation(smsMessage.Status.ToString());
 
             // Twilio doesn't currently have an async API, so return success.
             return Task.FromResult(0);
