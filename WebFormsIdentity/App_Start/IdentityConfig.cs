@@ -15,9 +15,32 @@ using System.Diagnostics;
 using System.Net.Mail;
 using System.IO;
 using System.Web.Hosting;
+//using System.Web;
+
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
 
 namespace WebFormsIdentity
 {
+    public static class ServiceUtils
+    {
+        public static string getSettingsFromFile(string key)
+        {
+            string retrievedSetting = "";
+            var objReader = new StreamReader(String.Concat(HostingEnvironment.ApplicationPhysicalPath, "\\PrivateSettings2.txt"));
+            do
+            {
+                var line = objReader.ReadLine();
+                if (line.StartsWith(key))
+                {
+                    retrievedSetting = line.Substring(key.Length + 1);
+                    break;
+                }
+
+            } while (objReader.Peek() != -1);
+            return retrievedSetting;
+        }
+    }
     public class EmailService : IIdentityMessageService
     {
         public async Task SendAsync(IdentityMessage message)
@@ -50,7 +73,7 @@ namespace WebFormsIdentity
 
             var msg = new MailMessage()
             {
-                From = new MailAddress(getSettingsFromFile("emailAddress")),
+                From = new MailAddress(ServiceUtils.getSettingsFromFile("emailAddress")),
                 Subject = message.Subject,
                 Body = message.Body,
                 IsBodyHtml = true
@@ -59,27 +82,12 @@ namespace WebFormsIdentity
             msg.To.Add(new MailAddress(message.Destination));
 
             var smtpClient = new SmtpClient("smtp.gmail.com", 587);
-            smtpClient.Credentials = new NetworkCredential(getSettingsFromFile("emailAddress"), getSettingsFromFile("emailPassword"));
+            smtpClient.Credentials = new NetworkCredential(ServiceUtils.getSettingsFromFile("emailAddress"), ServiceUtils.getSettingsFromFile("emailPassword"));
             smtpClient.EnableSsl = true;
             smtpClient.Send(msg);
         }
 
-        private string getSettingsFromFile(string key)
-        {
-            string retrievedSetting = "";
-            var objReader = new StreamReader(String.Concat(HostingEnvironment.ApplicationPhysicalPath, "\\PrivateSettings2.txt"));
-            do
-            {
-                var line = objReader.ReadLine();
-                if (line.StartsWith(key))
-                {
-                    retrievedSetting = line.Substring(key.Length+1);
-                    break;
-                }
-
-            } while (objReader.Peek() != -1);
-            return retrievedSetting;
-        }
+        
     }
 
     public class SmsService : IIdentityMessageService
@@ -87,6 +95,18 @@ namespace WebFormsIdentity
         public Task SendAsync(IdentityMessage message)
         {
             // Plug in your SMS service here to send a text message.
+            TwilioClient.Init(ServiceUtils.getSettingsFromFile("twilioSID"), ServiceUtils.getSettingsFromFile("twilioAuthToken"));
+
+            var smsMessage = MessageResource.Create(
+                body: message.Body,
+                from: new Twilio.Types.PhoneNumber(ServiceUtils.getSettingsFromFile("twilioPhoneNumber")),
+                to: new Twilio.Types.PhoneNumber(message.Destination)
+            );
+
+            // Status is one of Queued, Sending, Sent, Failed or null if the number is not valid
+            Trace.TraceInformation(smsMessage.Status.ToString());
+
+            // Twilio doesn't currently have an async API, so return success.
             return Task.FromResult(0);
         }
     }

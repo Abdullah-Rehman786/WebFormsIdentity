@@ -24,14 +24,17 @@ namespace WebFormsIdentity.Account
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            var userId = signinManager.GetVerifiedUserId<ApplicationUser, string>();
-            if (userId == null)
+            if (!IsPostBack)
             {
-                Response.Redirect("/Account/Error", true);
-            }
-            var userFactors = manager.GetValidTwoFactorProviders(userId);
-            Providers.DataSource = userFactors.Select(x => x).ToList();
-            Providers.DataBind();            
+                var userId = signinManager.GetVerifiedUserId<ApplicationUser, string>();
+                if (userId == null)
+                {
+                    Response.Redirect("/Account/Error", true);
+                }
+                var userFactors = manager.GetValidTwoFactorProviders(userId);
+                Providers.DataSource = userFactors.Select(x => x).ToList();
+                Providers.DataBind();
+            }     
         }
 
         protected void CodeSubmit_Click(object sender, EventArgs e)
